@@ -27,10 +27,7 @@ const randomId = () => crypto.randomBytes(8).toString("hex");
 
 const io = new Server(server, {
   cors: {
-    origin: [
-      "http://localhost:3000",
-      "https://multiplayer-test-eta.vercel.app/",
-    ],
+    origin: "*",
   },
 });
 
