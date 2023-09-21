@@ -1,6 +1,5 @@
 const express = require("express");
 const app = express();
-const http = require("http");
 
 const { Server } = require("socket.io");
 const crypto = require("crypto");
@@ -13,16 +12,13 @@ require("dotenv").config();
 
 const https = require("https");
 const fs = require("fs");
-// [Thu Sep 21 01:50:43 PM UTC 2023] Your cert is in: /root/.acme.sh/iut-chat.karljustiniano.fr_ecc/iut-chat.karljustiniano.fr.cer
-// [Thu Sep 21 01:50:43 PM UTC 2023] Your cert key is in: /root/.acme.sh/iut-chat.karljustiniano.fr_ecc/iut-chat.karljustiniano.fr.key
-// [Thu Sep 21 01:50:44 PM UTC 2023] The intermediate CA cert is in: /root/.acme.sh/iut-chat.karljustiniano.fr_ecc/ca.cer
-// [Thu Sep 21 01:50:44 PM UTC 2023] And the full chain certs is there: /root/.acme.sh/iut-chat.karljustiniano.fr_ecc/fullchain.cer
+
 const options = {
   key: fs.readFileSync(process.env.KEY_PATH),
   cert: fs.readFileSync(process.env.CERT_PATH),
 };
 
-const server = https.createServer(options, (req, res) => {});
+const server = https.createServer(options, app);
 
 const { EVENTS_IN, EVENTS_OUT } = require("./const.events");
 const { ERRORS, ERROR_MESSAGES } = require("./const.errors");
