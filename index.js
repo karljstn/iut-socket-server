@@ -1,13 +1,28 @@
 const express = require("express");
 const app = express();
 const http = require("http");
-const server = http.createServer(app);
+
 const { Server } = require("socket.io");
 const crypto = require("crypto");
 const { SessionStore } = require("./SessionStore");
 const { MessageStore } = require("./MessageStore");
 const store = new SessionStore();
 const messageStore = new MessageStore();
+
+require("dotenv").config();
+
+const https = require("https");
+const fs = require("fs");
+// [Thu Sep 21 01:50:43 PM UTC 2023] Your cert is in: /root/.acme.sh/iut-chat.karljustiniano.fr_ecc/iut-chat.karljustiniano.fr.cer
+// [Thu Sep 21 01:50:43 PM UTC 2023] Your cert key is in: /root/.acme.sh/iut-chat.karljustiniano.fr_ecc/iut-chat.karljustiniano.fr.key
+// [Thu Sep 21 01:50:44 PM UTC 2023] The intermediate CA cert is in: /root/.acme.sh/iut-chat.karljustiniano.fr_ecc/ca.cer
+// [Thu Sep 21 01:50:44 PM UTC 2023] And the full chain certs is there: /root/.acme.sh/iut-chat.karljustiniano.fr_ecc/fullchain.cer
+const options = {
+  key: fs.readFileSync(process.env.KEY_PATH),
+  cert: fs.readFileSync(process.env.CERT_PATH),
+};
+
+const server = https.createServer(options, (req, res) => {});
 
 const { EVENTS_IN, EVENTS_OUT } = require("./const.events");
 const { ERRORS, ERROR_MESSAGES } = require("./const.errors");
@@ -136,9 +151,31 @@ io.on("connection", async (socket) => {
     }
   });
 
-  // // when a user is typing, broadcast the event to all the clients
+  // when a user is typing, broadcast the event to all the clients
   socket.on("user typing", (nickname) => {
+    console.log("user is typing", nickname);
     socket.broadcast.emit("user typing", nickname);
+  });
+
+  // when a user stops typing, broadcast the event to all the clients
+  socket.on("user stopped typing", (nickname) => {
+    console.log("user stopped typing", nickname);
+    socket.broadcast.emit("user stopped typing", nickname);
+  });
+
+  socket.on("user typing private", ({ username, to }) => {
+    console.log("user typing private", username, to);
+
+    socket.to(to).to(socket.userID).emit("user typing private", username);
+  });
+
+  socket.on("user stopped typing private", ({ username, to }) => {
+    console.log("user stopped typing private", username, to);
+
+    socket
+      .to(to)
+      .to(socket.userID)
+      .emit("user stopped typing private", username);
   });
 
   socket.on("disconnect", async () => {
@@ -164,94 +201,6 @@ io.on("connection", async (socket) => {
     });
   };
 });
-
-// io.on("connection", (socket) => {
-// const users = [];
-// persist session
-// store.saveSession(socket.sessionID, {
-//   userID: socket.userID,
-//   username: socket.username,
-//   connected: true,
-// });
-// socket.emit("session", {
-//   sessionID: socket.sessionID,
-//   userID: socket.userID,
-// });
-// for (let [id, socket] of io.of("/").sockets) {
-//   users.push({
-//     userID: id,
-//     username: socket.username,
-//   });
-// }
-// io.emit("users", users);
-// socket.on("private message", ({ content, to }) => {
-//   socket.to(to).emit("private message", {
-//     content,
-//     from: socket.id,
-//   });
-// });
-// socket.broadcast.emit("user connected", {
-//   userID: socket.id,
-//   username: socket.username,
-// });
-// const user = {
-//   id: socket.id,
-// };
-// socket.on("set_nickname", (nickname) => {
-//   console.log("nickname", nickname);
-//   user.nickname = nickname;
-//   users.push(user);
-//   // give the client the initial state on connection
-//   socket.emit("send_user_info", user);
-//   // give the users list
-//   io.emit("get_users_list", users);
-//   // socket.emit("send_users", users);
-//   // update the client everytime someone connects
-//   socket.broadcast.emit("chat message", {
-//     sender: "System",
-//     content: `${user.nickname} joined the conversation`,
-//   });
-// });
-// socket.on("disconnect", (data) => {
-//   // console.log("user disconnected", socket.id);
-//   const disconnected_user_id = users.findIndex(
-//     (user) => user.id === socket.id
-//   );
-//   // console.log("length before", users.length);
-//   if (disconnected_user_id !== -1) {
-//     console.log(
-//       "remove user with nickname",
-//       users[disconnected_user_id].nickname
-//     );
-//     // say to everyone that this user disconnected
-//     socket.broadcast.emit("chat message", {
-//       sender: "System",
-//       content: `${users[disconnected_user_id].nickname} disconnected`,
-//     });
-//     socket.broadcast.emit(
-//       "user_stopped_typing",
-//       users[disconnected_user_id].nickname
-//     );
-//     users.splice(disconnected_user_id, 1);
-//     io.emit("get_users_list", users);
-//     console.log(users);
-//   }
-//   // console.log("length after", users.length);
-// });
-// // when the server receives a message from a user
-// socket.on("chat message", (msg) => {
-//   console.log("message: " + msg);
-//   // use io to emit to every client
-//   io.emit("chat message", msg);
-// });
-// // when a user is typing, broadcast the event to all the clients
-// socket.on("user_typing", (nickname) => {
-//   socket.broadcast.emit("user_typing", nickname);
-// });
-// socket.on("user_stopped_typing", (nickname) => {
-//   socket.broadcast.emit("user_stopped_typing", nickname);
-// });
-// });
 
 server.listen(1234, () => {
   console.log("listening on *:1234");
