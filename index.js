@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-
+const http = require("http");
 const { Server } = require("socket.io");
 const crypto = require("crypto");
 const { SessionStore } = require("./SessionStore");
@@ -13,12 +13,13 @@ require("dotenv").config();
 const https = require("https");
 const fs = require("fs");
 
-const options = {
-  key: fs.readFileSync(process.env.KEY_PATH),
-  cert: fs.readFileSync(process.env.CERT_PATH),
-};
+// const options = {
+//   key: fs.readFileSync(process.env.KEY_PATH),
+//   cert: fs.readFileSync(process.env.CERT_PATH),
+// };
 
-const server = https.createServer(options, app);
+const server = http.createServer(app);
+// const server = https.createServer(options, app);
 
 const { EVENTS_IN, EVENTS_OUT } = require("./const.events");
 const { ERRORS, ERROR_MESSAGES } = require("./const.errors");
