@@ -1,5 +1,3 @@
-const { ERRORS, ERROR_MESSAGES } = require("./const.errors");
-
 class SessionStore {
   constructor() {
     this.sessions = new Map();
@@ -21,7 +19,7 @@ class SessionStore {
     [...this.sessions.values()].forEach((session) => {
       console.log("username is", session.username);
       if (username === session.username) {
-        return ERROR_MESSAGES[101];
+        return new Error("Username déjà pris");
       }
     });
   }

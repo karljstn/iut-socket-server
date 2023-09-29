@@ -21,9 +21,6 @@ const fs = require("fs");
 const server = http.createServer(app);
 // const server = https.createServer(options, app);
 
-const { EVENTS_IN, EVENTS_OUT } = require("./const.events");
-const { ERRORS, ERROR_MESSAGES } = require("./const.errors");
-
 const randomId = () => crypto.randomBytes(8).toString("hex");
 
 const io = new Server(server, {
@@ -38,6 +35,17 @@ app.get("/", (req, res) => {
 
 const isCommand = (input) => {
   return input[0] === "/";
+};
+
+const isSpam = (socket) => {
+  if (socket.lastMessage && socket.lastMessage > Date.now() - 2000) {
+    if (socket.tries > 3) return true;
+    else socket.tries += 1;
+  } else {
+    socket.tries = 0;
+  }
+  socket.lastMessage = Date.now();
+  return false;
 };
 
 io.use((socket, next) => {
@@ -124,6 +132,14 @@ io.on("connection", async (socket) => {
       username: socket.username,
     };
 
+    if (isSpam(socket)) {
+      socket.emit("error", {
+        code: 100,
+        error: "Dose le spam cousin",
+      });
+      return new Error("Dose le spam cousin");
+    }
+
     if (isCommand(content)) {
       io.emit("command", content);
     } else {
@@ -190,13 +206,6 @@ io.on("connection", async (socket) => {
       });
     }
   });
-
-  const emitError = (errCode) => {
-    socket.emit("chat error", {
-      code: errCode,
-      message: ERROR_MESSAGES[errCode],
-    });
-  };
 });
 
 server.listen(1234, () => {
