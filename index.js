@@ -208,6 +208,11 @@ io.on("connection", async (socket) => {
   });
 });
 
+process.on("exit", () => {
+  console.log("disconnect sockets");
+  io.disconnectSockets();
+});
+
 server.listen(1234, () => {
   console.log("listening on *:1234");
 });
